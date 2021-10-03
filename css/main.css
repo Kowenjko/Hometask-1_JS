@@ -1,0 +1,8 @@
+.edit_note,
+.archive_note,
+.delete_note {
+  cursor: pointer;
+}
+.active {
+  display: none;
+}
