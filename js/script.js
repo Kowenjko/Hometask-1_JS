@@ -1,17 +1,7 @@
-let arr_icon = {
-  task: "<i class='fas fa-shopping-cart'></i>",
-  idea: "<i class='fas fa-lightbulb'></i>",
-  quote: "<i class='fas fa-quote-right'></i>",
-  randomThought: "<i class='fas fa-head-side-virus'></i>",
-  editNote: "<i class='fas fa-pen'></i>",
-  deleteNote: "<i class='fas fa-trash'></i>",
-  archiveNote: "<i class='fas fa-archive'></i>",
-};
-// let now_data = new Date().toLocaleDateString();
-let now_data = new Date().toDateString();
-console.log(now_data);
-let categories = ["Task", "Quote", "Random Thought", "Idea"];
+import { arr_icon, notesList, categories } from "./data.js";
+import * as dataDOM from "./dataDOM.js";
 
+// ---------------------------------
 let formatNameCategory = (category) => {
   let category_item = category.replace(/\s/g, "");
   return category_item[0].toLowerCase() + category_item.slice(1);
@@ -21,90 +11,41 @@ let nextId = (id) => {
   return id.map((item) => item.id).sort((a, b) => b - a)[0] + 1;
 };
 // ---------------------------------
-let onDelete = (list, index) => {
+const totalNones = (note, categories) => {
+  let active_notes = {};
+  for (let i = 0; i < categories.length; i++) {
+    active_notes[categories[i]] = note.filter((elem) => elem.category == categories[i]).length;
+  }
+  return active_notes;
+};
+// ---------------------------------
+let onDelete = (list, index, item) => {
   let partOne = list.slice(0, index);
   let partTwo = list.slice(index + 1);
   let tmpList = [...partOne, ...partTwo];
-  localStorage.removeItem("notesList");
-  localStorage.setItem("notesList", JSON.stringify(tmpList));
+  //   localStorage.removeItem(item);
+  localStorage.setItem(item, JSON.stringify(tmpList));
+};
+// ---------------------------------
+let onAddLocal = (note) => {
+  let notesAll = JSON.parse(localStorage.getItem("notesList"));
+  let notes = [...notesAll, ...[note]];
+  localStorage.setItem("notesList", JSON.stringify(notes));
 };
 // ---------------------------------
 
-let notesList = [
-  {
-    id: 1,
-    name: "Shoping list",
-    created: "Sun Oct 03 2021",
-    category: "Task",
-    content: "Tomatoes, bread",
-    dates: "",
-  },
-  {
-    id: 2,
-    name: "New Feature",
-    created: "Sun Oct 02 2021",
-    category: "Idea",
-    content: "Implement new...",
-    dates: "",
-  },
-  {
-    id: 3,
-    name: "William Gaddis",
-    created: "Sun Oct 03 2021",
-    category: "Quote",
-    content: "Power doesn't co...",
-    dates: "",
-  },
-  {
-    id: 4,
-    name: "The theory of evolut...",
-    created: "Sun Oct 01 2021",
-    category: "Random Thought",
-    content: "The evolut..",
-    dates: "",
-  },
-  {
-    id: 5,
-    name: "The theory of evolut...",
-    created: "Sun Oct 01 2021",
-    category: "Quote",
-    content: "The evolut..",
-    dates: "",
-  },
-  {
-    id: 6,
-    name: "The theory of evolut...",
-    created: "Sun Oct 01 2021",
-    category: "Random Thought",
-    content: "The evolut..",
-    dates: "",
-  },
-  {
-    id: 7,
-    name: "New Feature",
-    created: "Sun Oct 02 2021",
-    category: "Idea",
-    content: "Implement new...",
-    dates: "",
-  },
-];
+let startLoadData = localStorage.getItem("startData");
+console.log(startLoadData);
+// Один раз загружаємо в localStorage
+!startLoadData == null
+  ? localStorage.setItem("notesList", JSON.stringify(notesList))
+  : localStorage.setItem("startData", true);
 
-// localStorage.setItem("notesList", JSON.stringify(notesList));
-
-let tableHeader = document.querySelectorAll("table#noteList th"),
-  tableBody = document.querySelector("table#noteList tbody");
-let buttonCreate = document.querySelector(".button-create button");
-let buttonCancel = document.querySelector(".button-cancel");
-let buttonAdd = document.querySelector(".button-add");
-let tableCreate = document.querySelector(".table-create ");
-
-console.log(tableHeader);
-console.log(tableBody);
-// Функція для введення даних в таблицю
+// Функція для введення даних в таблицю---------------
 function addItem(obj) {
   let tr = document.createElement("TR");
   tr.classList.add(`id`, `id-${obj.id}`);
-  for (let item of tableHeader) {
+  for (let item of dataDOM.tableHeader) {
     let div = document.createElement("DIV");
     let td = document.createElement("TD");
     if (item.classList.contains("id_note")) {
@@ -118,6 +59,11 @@ function addItem(obj) {
     } else if (item.classList.contains("delete_note")) {
       td.innerHTML = arr_icon.deleteNote;
       td.classList.add(`delete_note`);
+    } else if (item.classList.contains("category")) {
+      div.classList.add(`truncate`);
+      div.textContent = obj[item.innerText.toLowerCase()];
+      td.classList.add(`category`);
+      td.append(div);
     } else {
       div.classList.add(`truncate`);
       div.textContent = obj[item.innerText.toLowerCase()];
@@ -125,65 +71,71 @@ function addItem(obj) {
     }
     tr.append(td);
   }
-  tableBody.append(tr);
+  dataDOM.tableBody.append(tr);
 }
 
 let notes = JSON.parse(localStorage.getItem("notesList"));
 notes.forEach((item) => addItem(item));
-// Удаляємо вибрану нотатку
 
 let itemNote = document.querySelectorAll("table#noteList .id");
 let itemDelete = document.querySelectorAll("table#noteList tbody .delete_note");
+let itemCategory = document.querySelectorAll("table#noteList tbody .category");
+let itemArchive = document.querySelectorAll("table#noteList tbody .archive_note");
 let itemEdit = document.querySelectorAll("table#noteList tbody .edit_note");
+
+// Удаляємо вибрану нотатку------------------
 itemDelete.forEach((note, index) => {
   note.addEventListener("click", () => {
     itemNote[index].remove();
-    onDelete(notes, index);
-    // localStorage.setItem("notesList", JSON.stringify(itemNote));
+    onDelete(notes, index, "notesList");
+    window.location.reload();
   });
 });
-// Редагуємо вибрану нотатку
+
+// Редагуємо вибрану нотатку-----------------------
 itemEdit.forEach((note, index) => {
   note.addEventListener("click", () => {
-    buttonAdd.textContent = "Edit";
-    tableCreate.classList.toggle("active");
-    buttonCreate.classList.toggle("active");
+    dataDOM.buttonAdd.textContent = "Edit";
+
+    dataDOM.tableCreate.classList.toggle("active");
+    dataDOM.buttonCreate.classList.toggle("active");
+
     addForm.name.value = itemNote[index].childNodes[1].textContent;
     addForm.category.value = itemNote[index].childNodes[3].textContent;
     addForm.content.value = itemNote[index].childNodes[4].textContent;
+
     localStorage.setItem("index", index);
     localStorage.setItem("create", itemNote[index].childNodes[2].textContent);
   });
 });
-// Визиваємо таблицю для додавання нотаток
-buttonCreate.addEventListener("click", function () {
-  buttonAdd.textContent = "Add";
-  tableCreate.classList.toggle("active");
+// Визиваємо таблицю для додавання нотаток------
+dataDOM.buttonCreate.addEventListener("click", function () {
+  dataDOM.buttonAdd.textContent = "Add";
+  dataDOM.tableCreate.classList.toggle("active");
   this.classList.toggle("active");
   addForm.name.value = "";
   addForm.content.value = "";
 });
 
-// кнопка отмена
-buttonCancel.addEventListener("click", function () {
-  tableCreate.classList.toggle("active");
-  buttonCreate.classList.toggle("active");
+// кнопка cancel----------------------------------
+dataDOM.buttonCancel.addEventListener("click", function () {
+  dataDOM.tableCreate.classList.toggle("active");
+  dataDOM.buttonCreate.classList.toggle("active");
 });
-// добавляємо нотатку
-buttonAdd.addEventListener("click", function (event) {
-  console.log(this.textContent);
-  //   event.preventDefault();
+// добавляємо нотатку-------------------------------
+dataDOM.buttonAdd.addEventListener("click", function (event) {
+  event.preventDefault();
   if (this.textContent == "Edit") {
     const index = localStorage.getItem("index");
-    onDelete(notes, index);
+    onDelete(notes, index, "notesList");
     itemNote[index].remove();
   }
-  tableCreate.classList.toggle("active");
-  buttonCreate.classList.toggle("active");
+  dataDOM.tableCreate.classList.toggle("active");
+  dataDOM.buttonCreate.classList.toggle("active");
+
   const ald_date = new Date(localStorage.getItem("create"));
-  console.log(ald_date);
   const new_date = new Date(addForm.create.value);
-  console.log(new_date);
+
   let item = {
     id: nextId(notes),
     name: addForm.name.value,
@@ -196,13 +148,116 @@ buttonAdd.addEventListener("click", function (event) {
         : null,
   };
 
-  //   console.log(item);
-  console.log(item);
   addItem(item);
-  //   localStorage.removeItem("notesList");
-  let not = JSON.parse(localStorage.getItem("notesList"));
-  console.log(not);
-  let arr = [...not, ...[item]];
-  console.log(arr);
-  localStorage.setItem("notesList", JSON.stringify(arr));
+  onAddLocal(item);
+  window.location.reload();
+});
+
+// Визначаємо кількість
+let archive_notes = {
+  Task: 0,
+  Quote: 0,
+  "Random Thought": 0,
+  Idea: 0,
+};
+// localStorage.setItem("archive", JSON.stringify(archive_notes));
+let archiveStorage = JSON.parse(localStorage.getItem("archive"));
+let active = totalNones(notes, categories);
+let arr_archive = JSON.parse(localStorage.getItem("archiveNotes"));
+// Архівуємо нататку------------------
+itemArchive.forEach((note, index) => {
+  note.addEventListener("click", () => {
+    archiveStorage[itemCategory[index].textContent]++;
+    localStorage.setItem("archive", JSON.stringify(archiveStorage));
+    arr_archive.push(notes[index]);
+    localStorage.setItem("archiveNotes", JSON.stringify(arr_archive));
+    itemNote[index].remove();
+    onDelete(notes, index, "notesList");
+    window.location.reload();
+  });
+});
+console.log(arr_archive);
+// ----Загальний підсумок------------------------------
+let totalArchive = [];
+for (let i = 0; i < categories.length; i++) {
+  let obj_atchive = {};
+  obj_atchive["category"] = categories[i];
+  obj_atchive["active"] = active[categories[i]];
+  obj_atchive["archived"] = archiveStorage[categories[i]];
+  totalArchive.push(obj_atchive);
+}
+// Функція для введення даних в таблицю---------------
+function addArchive(obj) {
+  let tr = document.createElement("TR");
+  tr.classList.add(`id`);
+  for (let item of dataDOM.archiveHeader) {
+    let td = document.createElement("TD");
+    if (item.classList.contains("id_note")) {
+      td.innerHTML = arr_icon[formatNameCategory(obj.category)];
+    } else {
+      td.textContent = obj[item.innerText.toLowerCase()];
+    }
+    tr.append(td);
+  }
+  dataDOM.arhiveBody.append(tr);
+}
+// ------------------------------------------------------
+
+// ------------------------------------------------------
+
+// ------------------------------------------------------
+// Функція для введення даних в таблицю---------------
+function tableArchive(obj) {
+  let div = document.createElement("DIV");
+  let tr = document.createElement("TR");
+  tr.classList.add(`id`, `id-${obj.id}`);
+  for (let item of dataDOM.archiveTableHeader) {
+    let td = document.createElement("TD");
+    if (item.classList.contains("id_note")) {
+      td.innerHTML = arr_icon[formatNameCategory(obj.category)];
+    } else if (item.classList.contains("archive_note")) {
+      td.innerHTML = arr_icon.archiveNote;
+      td.classList.add(`archive_note`);
+    } else if (item.classList.contains("category")) {
+      td.textContent = obj[item.innerText.toLowerCase()];
+      td.classList.add(`category`);
+    } else {
+      td.textContent = obj[item.innerText.toLowerCase()];
+    }
+    tr.append(td);
+  }
+  dataDOM.arhiveTableBody.append(tr);
+}
+// ---------------------------------------------
+totalArchive.forEach((item) => addArchive(item));
+let itemArchiveList = document.querySelectorAll("table#ArchiveList .id");
+let sectionArchive = document.querySelector(".section-archive");
+console.log(sectionArchive);
+// ---------------------------------------------
+itemArchiveList.forEach((note, index) => {
+  note.addEventListener("click", () => {
+    sectionArchive.classList.toggle("active");
+  });
+});
+// ---------------------------------------------
+
+let archiveNotes = JSON.parse(localStorage.getItem("archiveNotes"));
+archiveNotes.forEach((item) => tableArchive(item));
+// ---------------------------------------------
+let itemNoteArchive = document.querySelectorAll("table#ArchiveTable .id");
+let itemNoArchive = document.querySelectorAll("table#ArchiveTable tbody .archive_note");
+let archiveCategory = document.querySelectorAll("table#ArchiveTable tbody .category");
+// ---------------------------------------------
+
+// Повертаємо назад------------------
+itemNoArchive.forEach((note, index) => {
+  note.addEventListener("click", () => {
+    notes.push(archiveNotes[index]);
+    itemNoteArchive[index].remove();
+    archiveStorage[archiveCategory[index].textContent]--;
+    localStorage.setItem("archive", JSON.stringify(archiveStorage));
+    localStorage.setItem("notesList", JSON.stringify(notes));
+    onDelete(archiveNotes, index, "archiveNotes");
+    window.location.reload();
+  });
 });

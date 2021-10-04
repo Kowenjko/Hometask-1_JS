@@ -1,4 +1,5 @@
 .edit_note,
+#ArchiveList,
 .archive_note,
 .delete_note {
   cursor: pointer;
