@@ -10,6 +10,13 @@ export let arr_icon = {
 
 export let categories = ["Task", "Quote", "Random Thought", "Idea"];
 
+export let archive_notes = {
+  Task: 0,
+  Quote: 0,
+  "Random Thought": 0,
+  Idea: 0,
+};
+
 export let notesList = [
   {
     id: 1,
