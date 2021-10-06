@@ -8,6 +8,8 @@ export let arr_icon = {
   archiveNote: "<i class='fas fa-archive'></i>",
 };
 
+export const pattern = /(\d{1,2})[\.|\-\/](\d{1,2})[\.|\-|\/](\d{4})/g;
+
 export let categories = ["Task", "Quote", "Random Thought", "Idea"];
 
 export let archive_notes = {

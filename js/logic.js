@@ -1,3 +1,14 @@
+// Один раз загружаємо в localStorage-------------------------
+export const funcStart = (note, archives) => {
+  let startLoadData = localStorage.getItem("startData");
+  if (startLoadData == null) {
+    localStorage.setItem("notesList", JSON.stringify(note));
+    localStorage.setItem("archive", JSON.stringify(archives));
+    localStorage.setItem("archiveNotes", JSON.stringify([]));
+    localStorage.setItem("startData", "start");
+  }
+};
+
 // -----удаляю пробели першу літеру роблю малою
 export let formatNameCategory = (category) => {
   let category_item = category.replace(/\s/g, "");
@@ -27,4 +38,17 @@ export let onAddLocal = (note) => {
   let notesAll = JSON.parse(localStorage.getItem("notesList"));
   let notes = [...notesAll, ...[note]];
   localStorage.setItem("notesList", JSON.stringify(notes));
+};
+// ----------Загальний підсумок-------------------------
+export let funcTotal = (active, listNotes) => {
+  let archiveStorage = JSON.parse(localStorage.getItem("archive"));
+  let totalArchive = [];
+  for (let i = 0; i < listNotes.length; i++) {
+    let obj_atchive = {};
+    obj_atchive["category"] = listNotes[i];
+    obj_atchive["active"] = active[listNotes[i]];
+    obj_atchive["archived"] = archiveStorage[listNotes[i]];
+    totalArchive.push(obj_atchive);
+  }
+  return totalArchive;
 };
